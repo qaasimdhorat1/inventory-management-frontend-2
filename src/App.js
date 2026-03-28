@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Categories from './pages/Categories';
@@ -52,6 +53,9 @@ const App = () => {
             } />
             <Route path="/register" element={
               <PublicRoute><Register /></PublicRoute>
+            } />
+            <Route path="/reset-password" element={
+              <PublicRoute><ResetPassword /></PublicRoute>
             } />
             <Route path="/dashboard" element={
               <ProtectedRoute><Dashboard /></ProtectedRoute>

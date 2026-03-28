@@ -69,6 +69,9 @@ const Login = () => {
           </button>
         </form>
 
+        <p style={styles.forgotPassword}>
+          <Link to="/reset-password" style={styles.link}>Forgot password?</Link>
+        </p>
         <p style={styles.footer}>
           Don't have an account?{' '}
           <Link to="/register" style={styles.link}>Register here</Link>
@@ -155,6 +158,12 @@ const styles = {
     color: '#e94560',
     textDecoration: 'none',
     fontWeight: '500',
+  },
+  forgotPassword: {
+    textAlign: 'center',
+    marginTop: '12px',
+    marginBottom: '0',
+    fontSize: '14px',
   },
 };
 
