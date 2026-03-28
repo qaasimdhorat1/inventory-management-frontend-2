@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
 
 const Categories = () => {
@@ -8,21 +8,26 @@ const Categories = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const response = await api.get('/inventory/categories/');
+      const response = await api.get(`/inventory/categories/?page=${currentPage}`);
       setCategories(response.data.results);
+      setTotalCount(response.data.count);
+      setTotalPages(Math.ceil(response.data.count / 10));
     } catch (err) {
       setError('Failed to load categories.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   const resetForm = () => {
     setFormData({ name: '', description: '' });
@@ -118,27 +123,57 @@ const Categories = () => {
       {categories.length === 0 ? (
         <p style={styles.empty}>No categories yet. Create one to organise your inventory.</p>
       ) : (
-        <div style={styles.grid}>
-          {categories.map((category) => (
-            <div key={category.id} style={styles.card}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.cardTitle}>{category.name}</h3>
-                <span style={styles.itemCount}>{category.item_count} items</span>
+        <>
+          <div style={styles.grid}>
+            {categories.map((category) => (
+              <div key={category.id} style={styles.card}>
+                <div style={styles.cardHeader}>
+                  <h3 style={styles.cardTitle}>{category.name}</h3>
+                  <span style={styles.itemCount}>{category.item_count} items</span>
+                </div>
+                {category.description && (
+                  <p style={styles.cardDescription}>{category.description}</p>
+                )}
+                <div style={styles.cardActions}>
+                  <button onClick={() => handleEdit(category)} style={styles.editBtn}>
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(category.id)} style={styles.deleteBtn}>
+                    Delete
+                  </button>
+                </div>
               </div>
-              {category.description && (
-                <p style={styles.cardDescription}>{category.description}</p>
-              )}
-              <div style={styles.cardActions}>
-                <button onClick={() => handleEdit(category)} style={styles.editBtn}>
-                  Edit
-                </button>
-                <button onClick={() => handleDelete(category.id)} style={styles.deleteBtn}>
-                  Delete
-                </button>
-              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={styles.pagination}>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  ...styles.pageBtn,
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                }}
+              >
+                Previous
+              </button>
+              <span style={styles.pageInfo}>
+                Page {currentPage} of {totalPages} ({totalCount} categories)
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  ...styles.pageBtn,
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                }}
+              >
+                Next
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -287,6 +322,27 @@ const styles = {
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '12px',
+  },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '16px',
+    marginTop: '20px',
+    padding: '16px',
+  },
+  pageBtn: {
+    padding: '8px 16px',
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  pageInfo: {
+    fontSize: '14px',
+    color: '#666',
   },
 };
 

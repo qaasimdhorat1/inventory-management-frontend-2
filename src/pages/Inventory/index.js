@@ -12,6 +12,9 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   const [formData, setFormData] = useState({
     name: '', description: '', sku: '', quantity: 0,
@@ -24,22 +27,24 @@ const Inventory = () => {
 
   const fetchItems = useCallback(async () => {
     try {
-      let url = '/inventory/items/?';
+      let url = `/inventory/items/?page=${currentPage}&`;
       if (searchQuery) url += `search=${searchQuery}&`;
       if (filterStatus) url += `status=${filterStatus}&`;
       if (filterCategory) url += `category=${filterCategory}&`;
       const response = await api.get(url);
       setItems(response.data.results);
+      setTotalCount(response.data.count);
+      setTotalPages(Math.ceil(response.data.count / 10));
     } catch (err) {
       setError('Failed to load inventory items.');
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, filterStatus, filterCategory]);
+  }, [searchQuery, filterStatus, filterCategory, currentPage]);
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/inventory/categories/');
+      const response = await api.get('/inventory/categories/?page_size=100');
       setCategories(response.data.results);
     } catch (err) {
       console.error('Failed to load categories');
@@ -50,6 +55,10 @@ const Inventory = () => {
     fetchItems();
     fetchCategories();
   }, [fetchItems]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus, filterCategory]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -260,62 +269,92 @@ const Inventory = () => {
       {items.length === 0 ? (
         <p style={styles.empty}>No inventory items found.</p>
       ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>SKU</th>
-              <th style={styles.th}>Category</th>
-              <th style={styles.th}>Quantity</th>
-              <th style={styles.th}>Price</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td style={styles.td}>{item.name}</td>
-                <td style={styles.td}>{item.sku}</td>
-                <td style={styles.td}>{item.category_name || '—'}</td>
-                <td style={styles.td}>{item.quantity}</td>
-                <td style={styles.td}>
-                  £{parseFloat(item.price).toFixed(2)}
-                </td>
-                <td style={styles.td}>
-                  <span style={{
-                    ...styles.badge,
-                    ...getStatusStyle(item.status),
-                  }}>
-                    {item.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  <div style={styles.actions}>
-                    <button
-                      onClick={() => setStockModal(item)}
-                      style={styles.actionBtn}
-                    >
-                      Stock
-                    </button>
-                    <button
-                      onClick={() => handleEdit(item)}
-                      style={styles.actionBtn}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      style={{ ...styles.actionBtn, color: '#c62828' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+        <>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Name</th>
+                <th style={styles.th}>SKU</th>
+                <th style={styles.th}>Category</th>
+                <th style={styles.th}>Quantity</th>
+                <th style={styles.th}>Price</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td style={styles.td}>{item.name}</td>
+                  <td style={styles.td}>{item.sku}</td>
+                  <td style={styles.td}>{item.category_name || '—'}</td>
+                  <td style={styles.td}>{item.quantity}</td>
+                  <td style={styles.td}>
+                    £{parseFloat(item.price).toFixed(2)}
+                  </td>
+                  <td style={styles.td}>
+                    <span style={{
+                      ...styles.badge,
+                      ...getStatusStyle(item.status),
+                    }}>
+                      {item.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    <div style={styles.actions}>
+                      <button
+                        onClick={() => setStockModal(item)}
+                        style={styles.actionBtn}
+                      >
+                        Stock
+                      </button>
+                      <button
+                        onClick={() => handleEdit(item)}
+                        style={styles.actionBtn}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        style={{ ...styles.actionBtn, color: '#c62828' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div style={styles.pagination}>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  ...styles.pageBtn,
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                }}
+              >
+                Previous
+              </button>
+              <span style={styles.pageInfo}>
+                Page {currentPage} of {totalPages} ({totalCount} items)
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  ...styles.pageBtn,
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {stockModal && (
@@ -547,6 +586,27 @@ const styles = {
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '12px',
+  },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '16px',
+    marginTop: '20px',
+    padding: '16px',
+  },
+  pageBtn: {
+    padding: '8px 16px',
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  pageInfo: {
+    fontSize: '14px',
+    color: '#666',
   },
   modalOverlay: {
     position: 'fixed',
