@@ -13,7 +13,7 @@ React-based frontend for an enterprise-grade Inventory Management System. Commun
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Framework | React 19 | Component-based UI library |
-| Routing | React Router v7 | Client-side page navigation |
+| Routing | React Router v6 | Client-side page navigation |
 | HTTP Client | Axios | API communication with interceptors |
 | Authentication | JWT | Secure token-based auth with auto-refresh |
 | CI/CD | GitHub Actions | Automated build verification |
@@ -69,6 +69,7 @@ src/
 ├── pages/
 │   ├── Login.js          # User login with JWT token storage
 │   ├── Register.js       # User registration with form validation
+│   ├── ResetPassword.js  # Password reset with identity verification
 │   ├── Dashboard.js      # Summary statistics and recent activity
 │   ├── Inventory.js      # Full inventory CRUD with search/filter
 │   ├── Categories.js     # Category management with item counts
@@ -86,6 +87,8 @@ src/
 - Public routes that redirect authenticated users to the dashboard
 - Profile viewing and editing (username, email, first/last name)
 - Password change with current password verification
+- Password reset via identity verification (username + email)
+- "Forgot password?" link on login page for easy access to reset flow
 
 ### Dashboard
 - Summary statistics: total items, total quantity, total value, low-stock count, out-of-stock count, category count
@@ -106,6 +109,11 @@ src/
 - Full CRUD for item categories
 - Item count displayed per category
 - Categories scoped to the authenticated user
+
+### Pagination
+- Paginated inventory item and category lists (10 items per page)
+- Previous/Next navigation with page count and total item display
+- Automatic page reset when search or filter criteria change
 
 ## Setup and Installation
 
@@ -162,7 +170,8 @@ Environment variables configured on Render:
 A GitHub Actions pipeline runs automatically on every push to `main`:
 
 1. **Install** — Installs all dependencies via `npm install`
-2. **Build** — Verifies the production build compiles successfully via `npm run build`
+2. **Test** — Runs 5 frontend component tests via `npm test`
+3. **Build** — Verifies the production build compiles successfully via `npm run build`
 
 The pipeline configuration is located at `.github/workflows/ci.yml`.
 
@@ -184,6 +193,7 @@ The pipeline configuration is located at `.github/workflows/ci.yml`.
 | **Protected/Public route wrappers** | Centralises access control logic. `ProtectedRoute` ensures unauthenticated users cannot access the app; `PublicRoute` ensures logged-in users skip the login/register flow. |
 | **Environment variable for API URL** | `REACT_APP_API_URL` allows seamless switching between local development (`localhost:8000`) and production (Render URL) without code changes. Set at build time by Render. |
 | **Static Site deployment** | React apps compile to static HTML/CSS/JS files and do not require a server runtime. Deploying as a Static Site on Render is simpler, faster, and free-tier eligible. |
+| **Pagination on list pages** | Inventory and category pages include Previous/Next controls that work with the API's paginated responses (10 items/page). Prevents unbounded data loading and ensures the UI remains performant at scale. |
 
 ## Repository Migration
 
